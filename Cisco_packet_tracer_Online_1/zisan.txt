@@ -1,0 +1,247 @@
+///by router fig1
+
+enable
+conf t
+int g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown 
+
+int g0/1
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+
+=======================
+192.168.10.2				192.168.20.2
+			router
+	      192.168.10.1  192.168.20.1
+		
+192.168.10.3				192.168.20.3
+
+
+
+
+
+
+////////////////////fig 2
+=======================
+192.168.10.2		192.168.10.3
+192.168.20.2		192.168.20.3
+
+=========================
+Vlan creation
+-----------
+en
+conf t
+
+vlan 10
+name CSE
+
+vlan 20
+name ME
+
+------------------
+show vlan brief
+-----------
+config
+====================
+int f0/1
+switchport mode access
+switchport access vlan 10
+end
+
+conf t
+int f0/2
+switchport mode access
+switchport access vlan 20
+end
+
+conf t
+int g0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,1
+end
+
+=========================================
+
+en
+conf t
+
+vlan 10
+name CSE
+
+vlan 20
+name ME
+
+int f0/1
+switchport mode access
+switchport access vlan 10
+end
+
+conf t
+int f0/2
+switchport mode access
+switchport access vlan 20
+end
+
+conf t
+int g0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,1
+end
+
+
+
+
+
+///////////////////////fig 3
+
+	192.168.10.1 192.168.20.1
+
+192.168.10.2   		  192.168.20.2
+
+=============
+SWITCH
+------------
+Vlan declaration
+en
+conf t
+
+vlan 10
+name CSE
+
+vlan 20
+name EEE
+
+exit
+
+conf t
+int f0/1
+switchport mode access
+switchport access vlan 10
+end
+
+
+conf t
+int f0/2
+switchport mode access
+switchport access vlan 20
+end
+
+
+
+conf t
+int g0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,1
+end
+
+============
+router::::::::::::::
+
+en
+config t
+
+int g0/0.10
+encapsulation dot1q 10
+ip address 192.168.10.1 255.255.255.0
+ 
+
+int g0/0.20
+encapsulation dot1q 20
+ip address 192.168.20.1 255.255.255.0
+
+int g0/0
+no shutdown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////
+
+
+
+----------------NAT Demo-------------------------
+
+NAT Router------------------
+
+enable
+conf t
+int g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown 
+
+int g0/1
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+int s0/0/0
+ip address 100.2.2.1 255.255.255.252
+clock rate 64000
+no shutdown
+
+ip route 0.0.0.0 0.0.0.0 s0/0/0
+
+
+int g0/0
+ip nat inside
+int g0/1
+ip nat inside
+int s0/0/0
+ip nat outside
+
+
+ip nat pool BUETpool 209.175.200.5 209.175.200.10 netmask 255.255.255.224
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+ip nat inside source list 1 pool BUETpool
+
+ip nat inside source list 1 pool BUETpool overload //for pat
+
+next router:
+enable
+conf t
+int g0/0
+ip address 100.10.10.1 255.255.255.0
+no shutdown 
+
+
+int s0/0/0
+ip address 100.2.2.2 255.255.255.252
+no shutdown
+
+ip route 0.0.0.0 0.0.0.0 s0/0/0
+
+
+
+////////////////////////////////////ACL
+NAMED:
+
+//router 1
+en
+conf t
+ip access-list extended FILTER
+permit tcp 192.168.10.2 0.0.0.0 host 100.10.10.3 eq 80
+deny tcp 192.168.20.0 0.0.0.255 host 100.10.10.3 eq 80
+permit tcp 192.168.10.2 0.0.0.0 host 100.10.10.2 eq 20
+permit tcp 192.168.10.2 0.0.0.0 host 100.10.10.2 eq 21
+permit ip any any
+int s0/0/0
+ip access-group FILTER out
+
+
+numbers:
